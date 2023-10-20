@@ -1,0 +1,11 @@
+.devcontainer
+TEST*.xml
+.venv
+venv
+__pycache__
+.env
+.vscode
+.DS_Store
+.code-workspace
+.idea
+.coverage
