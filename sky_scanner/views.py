@@ -40,7 +40,7 @@ class BookingClassViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['GET'])
     def user_bookings(self, request):
-        user_bookings = Booking.objects.filter(user=request.user).order_by('-created_at')  # Assuming you have a timestamp called `created_at` in your Booking model
+        user_bookings = Booking.objects.filter(user=request.user) # Assuming you have a timestamp called `created_at` in your Booking model
         serializer = BookingSerializer(user_bookings, many=True)
         return Response(serializer.data)
 
