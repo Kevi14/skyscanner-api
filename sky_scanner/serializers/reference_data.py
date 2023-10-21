@@ -58,3 +58,6 @@ class FlightNumberSerializer(serializers.ModelSerializer):
     class Meta:
         model = FlightNumber
         fields = '__all__'
+
+class CitySerializer(serializers.ListSerializer):
+    child = serializers.CharField()

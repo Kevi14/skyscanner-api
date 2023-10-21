@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 # Create your views here.
 from rest_framework import viewsets
@@ -8,6 +10,7 @@ from .serializers import *
 from .models import Address, Contact, BookedSegment
 from .serializers import AddressSerializer, ContactSerializer, BookedSegmentSerializer
 import django_filters
+
 # Reference Data
 class DocumentTypeViewSet(viewsets.ModelViewSet):
     queryset = DocumentType.objects.all()
@@ -126,3 +129,19 @@ class FlightViewSet(viewsets.ModelViewSet):
     serializer_class = FlightSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = FlightFilter
+
+
+class CityListViewSet(viewsets.ViewSet):
+    
+    def list(self, request):
+        origin_cities = Flight.objects.values_list('origin__city', flat=True).distinct()
+        destination_cities = Flight.objects.values_list('destination__city', flat=True).distinct()
+
+        all_cities = set(origin_cities) | set(destination_cities)  # Combining and deduping the lists
+        
+        # Convert list of city names to a list of dictionaries
+        city_data = [{city: city} for city in all_cities]
+
+        serializer = CitySerializer(city_data, many=True)
+        data = [x[0] for x in serializer.data]
+        return Response(data)
