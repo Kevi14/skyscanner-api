@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from ..models import UserProfile, Traveller, Document, Ticket, Booking
+from ..models import UserProfile, Traveller, Document, Ticket, Booking,Address,DocumentType
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,3 +53,28 @@ class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = '__all__'
+
+
+
+class UserEditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'phone', 'frequent_flyer_number', 'date_of_birth']
+
+class AddressEditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = ['street', 'city', 'postal_code']
+
+class DocumentTypeEditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentType
+        fields = ['type']
+
+class UserProfileEditSerializer(serializers.ModelSerializer):
+    address = AddressEditSerializer()
+    document = DocumentTypeEditSerializer()
+
+    class Meta:
+        model = UserProfile
+        fields = ['user', 'address', 'document']

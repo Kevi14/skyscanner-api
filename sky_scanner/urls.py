@@ -5,7 +5,7 @@ from .views import (FlightViewSet, DocumentTypeViewSet, PassengerTypeViewSet, Ge
                     SalutationViewSet, TicketStatusViewSet, BookingClassViewSet, 
                     TicketNumberViewSet, BookingReferenceViewSet, IATACodeViewSet, 
                     AirlineCodeViewSet, FlightNumberViewSet, AddressViewSet, 
-                    ContactViewSet, BookedSegmentViewSet)
+                    ContactViewSet, BookedSegmentViewSet,UserProfileViewSet)
 from sky_scanner.views import CityListViewSet
 
 router = DefaultRouter()
@@ -25,6 +25,7 @@ router.register(r'addresses', AddressViewSet)
 router.register(r'contacts', ContactViewSet)
 router.register(r'booked-segments', BookedSegmentViewSet)
 router.register(r'cities', CityListViewSet, basename='city')
+router.register(r'profile', UserProfileViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # Create your views here.
-from rest_framework import viewsets
+from rest_framework import viewsets,status
 from .models import *
 from .serializers import *
 from .models import Address, Contact, BookedSegment
@@ -145,3 +145,36 @@ class CityListViewSet(viewsets.ViewSet):
         serializer = CitySerializer(city_data, many=True)
         data = [x[0] for x in serializer.data]
         return Response(data)
+
+
+class UserProfileViewSet(viewsets.ModelViewSet):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
+
+    def update(self, request, *args, **kwargs):
+        profile = self.get_object()
+        user_data = request.data.get('user')
+        address_data = request.data.get('address')
+        document_data = request.data.get('document')
+
+        # Update User
+        user_serializer = UserEditSerializer(profile.user, data=user_data, partial=True)
+        if user_serializer.is_valid():
+            user_serializer.save()
+
+        # Update Address
+        address_serializer = AddressEditSerializer(profile.address, data=address_data, partial=True)
+        if address_serializer.is_valid():
+            address_serializer.save()
+
+        # Update DocumentType
+        document_serializer = DocumentTypeEditSerializer(profile.document, data=document_data, partial=True)
+        if document_serializer.is_valid():
+            document_serializer.save()
+
+        # Update UserProfile
+        serializer = self.get_serializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
