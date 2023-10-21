@@ -2,28 +2,56 @@ from datetime import datetime, timedelta
 from .models import Booking
 
 class Discount:
-    ECONOMY_PRICE_THRESHOLD = 300  # Example value
-    BUSINESS_PRICE_THRESHOLD = 700  # Example value
-
-    def __init__(self, flights, price):
+    TIER_DISCOUNTS = {
+        'Bronze': {
+            'range': (1, 4),
+            'discounts': {
+                'Economic': 5,
+                'Business': 3,
+                'First Class': 2
+            }
+        },
+        'Silver': {
+            'range': (5, 9),
+            'discounts': {
+                'Economic': 10,
+                'Business': 7,
+                'First Class': 5
+            }
+        },
+        'Gold': {
+            'range': (10, 19),
+            'discounts': {
+                'Economic': 15,
+                'Business': 12,
+                'First Class': 10
+            }
+        },
+        'Platinum': {
+            'range': (20, 29),
+            'discounts': {
+                'Economic': 20,
+                'Business': 18,
+                'First Class': 15
+            }
+        },
+        'Diamond': {
+            'range': (30, float('inf')),
+            'discounts': {
+                'Economic': 25,
+                'Business': 22,
+                'First Class': 20
+            }
+        }
+    }
+    def __init__(self, flights):
         self.flights = flights
-        self.price = price
 
-    def get_percentage(self):
-        base_discount = 0
-        if self.flights >= 2 and self.flights < 5:
-            base_discount = 10
-        elif self.flights >= 5 and self.flights < 10 and self.flights % 3 == 0:
-            base_discount = 30
-        elif self.flights == 10:
-            base_discount = 60
-
-        if self.price < self.ECONOMY_PRICE_THRESHOLD:
-            return base_discount
-        elif self.price < self.BUSINESS_PRICE_THRESHOLD:
-            return base_discount + 5  # Additional 5% for Business
-        else:
-            return base_discount + 10  # Additional 10% for First Class
+    def get_tier_and_max_discount(self):
+        for tier, details in self.TIER_DISCOUNTS.items():
+            if details['range'][0] <= self.flights <= details['range'][1]:
+                return tier, max(details['discounts'].values())
+        return None, 0
 
 class RewardSystem:
     def __init__(self, user):
@@ -35,25 +63,39 @@ class RewardSystem:
         bookings_count = Booking.objects.filter(user=self.user, tickets__issued_date__range=(start_date, end_date)).distinct().count()
         return bookings_count
 
-    def get_discount(self, price):
+    def get_discount(self):
         flight_count = self.flights_this_year()
-        discount = Discount(flight_count, price)
-        return discount.get_percentage()
+        discount = Discount(flight_count)
+        _, discount_value = discount.get_tier_and_max_discount()
+        return discount_value
 
     def get_price_after_discount(self, original_price):
-        discount = self.get_discount(original_price)
+        discount = self.get_discount()
         return original_price - (original_price * discount / 100)
 
-    def notify_user(self, price):
-        discount = self.get_discount(price)
+    def notify_user(self):
+        discount = self.get_discount()
         if discount:
-            message = f"Congratulations! You're eligible for a {discount}% discount on your next flight!"
+            message = f"Congratulations! You're eligible for a maximum discount of {discount}% on your next flight!"
             print(message)
 
-    def get_discount_info(self, price):
+    def get_discount_info(self):
         flight_count = self.flights_this_year()
-        discount = self.get_discount(price)
+        discount = Discount(flight_count)
+        tier, discount_value = discount.get_tier_and_max_discount()
+
+        # Including all tier details in the response
+        all_tiers = []
+        for t, details in Discount.TIER_DISCOUNTS.items():
+            all_tiers.append({
+                "tier_name": t,
+                "flight_range": details['range'],
+                "discounts": details['discounts']
+            })
+
         return {
             "flights_this_year": flight_count,
-            "discount_percentage": discount
+            "current_tier": tier,
+            "max_discount_percentage": discount_value,
+            "all_tiers": all_tiers
         }
