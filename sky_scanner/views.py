@@ -178,3 +178,63 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         self.perform_update(serializer)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+def find_flight(departure_location, arrival_location, departure_date):
+    # Assuming you have a Flight model
+    flights = Flight.objects.filter(
+        departure_location=departure_location,
+        arrival_location=arrival_location,
+        departure_date=departure_date,
+    )
+
+    # You can extend this with more conditions if needed
+    # For example: Filter by available seats, flight status, etc.
+    return flights.first() if flights else None
+    
+class BookingViewSet(viewsets.ModelViewSet):
+    queryset = Booking.objects.all()
+    serializer_class = BookingSerializer
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        user = request.user 
+        departure_location = data.pop('departure_location')
+        arrival_location = data.pop('arrival_location')
+        departure_date = data.pop('departure_date')
+        # Find a suitable flight
+        flight = find_flight(departure_location, arrival_location, departure_date)
+        
+        if not flight:
+            return Response({"error": "No available flight found for the given criteria."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Adding the found flight to your booking data
+        data['flight'] = flight.id
+        data['user'] = user.id
+
+        tickets_data = data.pop('tickets', [])
+        booking_serializer = BookingSerializer(data=data)
+
+        if booking_serializer.is_valid():
+            booking = booking_serializer.save()
+            for ticket_data in tickets_data:
+                traveller_data = ticket_data.pop('traveller')
+                traveller_serializer = TravellerSerializer(data=traveller_data)
+                
+                if traveller_serializer.is_valid():
+                    traveller = traveller_serializer.save()
+                    ticket_data['traveller'] = traveller.id
+                    ticket_serializer = TicketSerializer(data=ticket_data)
+
+                    if ticket_serializer.is_valid():
+                        ticket = ticket_serializer.save()
+                        booking.tickets.add(ticket)
+                    else:
+                        booking.delete()  # Clean up booking if ticket creation fails
+                        return Response(ticket_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    booking.delete()  # Clean up booking if traveller creation fails
+                    return Response(traveller_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            return Response(booking_serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(booking_serializer.errors, status=status.HTTP_400_BAD_REQUEST)

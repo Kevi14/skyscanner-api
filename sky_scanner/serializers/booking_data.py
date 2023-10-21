@@ -50,11 +50,11 @@ class TicketSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class BookingSerializer(serializers.ModelSerializer):
+    tickets = TicketSerializer(many=True)
+
     class Meta:
         model = Booking
         fields = '__all__'
-
-
 
 class UserEditSerializer(serializers.ModelSerializer):
     class Meta:
