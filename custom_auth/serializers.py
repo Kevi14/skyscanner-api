@@ -9,8 +9,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 User = get_user_model()
 
 class RegisterSerializer(serializers.ModelSerializer):
-    firstName = serializers.CharField(required=True, source="first_name")
-    lastName = serializers.CharField(required=True, source="last_name")
+    first_name = serializers.CharField(required=True, source="first_name")
+    last_name = serializers.CharField(required=True, source="last_name")
     email = serializers.EmailField(
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
@@ -18,10 +18,9 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
-    role = serializers.CharField(write_only=True, required=True)
     class Meta:
         model = User
-        fields = ('password', 'password2', 'email', 'firstName', 'lastName','role')
+        fields = ('password', 'password2', 'email', 'firstName', 'lastName')
         extra_kwargs = {
             'first_name': {'required': True},
             'last_name': {'required': True}
@@ -38,7 +37,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=validated_data['email'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
-            role=validated_data['role']
         )
 
         user.set_password(validated_data['password'])
@@ -46,10 +44,10 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         return user
 
+# IF YOU WANT TO UPDATE RETURN OF TOKENS
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super(CustomTokenObtainPairSerializer, self).validate(attrs)
-        data.update({
-            'role': self.user.user_type,
-        })
+        # data.update({
+        # })
         return data

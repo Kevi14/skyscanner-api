@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # my apps
     "custom_auth",
+    "sky_scanner.apps.SkyScannerConfig"
 ]
 
 MIDDLEWARE = [
@@ -126,10 +127,11 @@ STATIC_URL = 'static/'
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
+AUTH_USER_MODEL = "custom_auth.User"
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
-AUTH_USER_MODEL = "custom_auth.User"
 DEFAULT_RENDERER_CLASSES = ("renderer.ResponseEnvelopeRenderer",)
 
 
