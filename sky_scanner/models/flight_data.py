@@ -8,6 +8,7 @@ class Flight(models.Model):
     destination = models.ForeignKey(IATACode, related_name='arrival_flights', on_delete=models.CASCADE)
     departure_date = models.DateTimeField()
     arrival_date = models.DateTimeField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)  # Adding the price field
 
 class Address(models.Model):
     street = models.CharField(max_length=255)

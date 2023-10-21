@@ -117,8 +117,9 @@ class Command(BaseCommand):
                 
                 # Randomly generate departure date within the given range
                 departure_date = fake.date_time_between_dates(start_date, end_date)
-                
-                # Let's assume the flight duration is between 1 to 10 hours for simplicity
+                # Generate a random price for the flight, e.g., between 50 to 500
+                flight_price = round(fake.random.uniform(50, 500), 2)
+
                 flight_duration = timedelta(hours=random.randint(1, 10))
                 
                 # Calculate the arrival date based on the departure date and flight duration
@@ -131,7 +132,8 @@ class Command(BaseCommand):
                     origin=origin,
                     destination=destination,
                     departure_date=departure_date,
-                    arrival_date=arrival_date
+                    arrival_date=arrival_date,
+                    price=flight_price  # Add the generated price here
                 )
 
 

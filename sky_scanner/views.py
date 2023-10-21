@@ -197,10 +197,12 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         data = request.data
-        user = request.user 
+
+        user = request.user
         departure_location = data.pop('departure_location')
         arrival_location = data.pop('arrival_location')
         departure_date = data.pop('departure_date')
+
         # Find a suitable flight
         flight = find_flight(departure_location, arrival_location, departure_date)
         
@@ -211,30 +213,10 @@ class BookingViewSet(viewsets.ModelViewSet):
         data['flight'] = flight.id
         data['user'] = user.id
 
-        tickets_data = data.pop('tickets', [])
         booking_serializer = BookingSerializer(data=data)
-
+        
         if booking_serializer.is_valid():
-            booking = booking_serializer.save()
-            for ticket_data in tickets_data:
-                traveller_data = ticket_data.pop('traveller')
-                traveller_serializer = TravellerSerializer(data=traveller_data)
-                
-                if traveller_serializer.is_valid():
-                    traveller = traveller_serializer.save()
-                    ticket_data['traveller'] = traveller.id
-                    ticket_serializer = TicketSerializer(data=ticket_data)
-
-                    if ticket_serializer.is_valid():
-                        ticket = ticket_serializer.save()
-                        booking.tickets.add(ticket)
-                    else:
-                        booking.delete()  # Clean up booking if ticket creation fails
-                        return Response(ticket_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    booking.delete()  # Clean up booking if traveller creation fails
-                    return Response(traveller_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
+            booking_serializer.save()
             return Response(booking_serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(booking_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
