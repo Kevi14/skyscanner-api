@@ -91,15 +91,15 @@ class Command(BaseCommand):
 
             # Generate a random airline code (e.g., 3 uppercase letters)
             random_airline_code = ''.join(random.choices(string.ascii_uppercase, k=3))
-            created,ticket_number = TicketNumber.objects.create(number=random_ticket_number),
-            created,ticketing_airline=AirlineCode.objects.create(code=random_airline_code),
-            ticket_status =TicketStatus.objects.create(status="ACTIVE").id
+            ticket_number = TicketNumber.objects.create(number=random_ticket_number)
+            ticketing_airline=AirlineCode.objects.create(code=random_airline_code)
+            ticket_status =TicketStatus.objects.get_or_create(status="ACTIVE")
             print(ticket_number)
             print(ticketing_airline)
 
             ticket = Ticket.objects.create(
-                ticket_number= ticket_number.id,
-                ticketing_airline=ticketing_airline.id,
+                ticket_number= ticket_number,
+                ticketing_airline=ticketing_airline,
                 issued_date=fake.date(),
                 traveller=traveller
             )
@@ -110,13 +110,11 @@ class Command(BaseCommand):
             booked_segment = BookedSegment.objects.create(
                 origin=origin,
                 destination=destination,
-                flight_number=FlightNumber.objects.order_by('?').first(),
                 flight_Date=fake.date(),
                 airline_code=AirlineCode.objects.order_by('?').first(),
                 departure_date=fake.date_time(),
                 booking_class=BookingClass.objects.order_by('?').first(),
                 price = round(fake.random.uniform(10, 500), 2),
-                tax_percentage = round(fake.random.uniform(1, 100), 2)
             )
             ticket.booked_segments.add(booked_segment)
                 
@@ -151,7 +149,6 @@ class Command(BaseCommand):
         user = User.objects.create(email=fake.email(),date_of_birth=date_of_birth)
 
         booking = Booking.objects.create(
-            booking_reference=BookingReference.objects.order_by('?').first(),
             user=user
         )
         booking.tickets.add(ticket)
