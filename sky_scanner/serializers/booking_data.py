@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from ..models import UserProfile, Traveller, Document, Ticket, Booking,Address,DocumentType,ReferralCode,Referral,BookedSegment
 from django.contrib.auth import get_user_model
-from .flight_data import BookedSegmentSerializer
+from .flight_data import BookedSegmentSerializer,ShowBookedSegmentSerializer
 User = get_user_model()
 
 
@@ -69,7 +69,7 @@ class TicketSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         # Convert the booked_segments from ID to serialized data only for GET requests
-        data['booked_segments'] = BookedSegmentSerializer(instance.booked_segments.all(), many=True).data
+        data['booked_segments'] = ShowBookedSegmentSerializer(instance.booked_segments.all(), many=True).data
         return data
     
 
@@ -79,16 +79,6 @@ class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = '__all__'
-    
-    def create(self, validated_data):
-        ticket_ids = validated_data.pop('tickets')
-        booking = Booking.objects.create(**validated_data)
-        for ticket_id in ticket_ids:
-            ticket = Ticket.objects.get(id=ticket_id)
-            ticket.booking = booking  # assuming `booking` is a ForeignKey in the `Ticket` model pointing to `Booking`
-            ticket.save()
-        return booking
-    
 
 class BookingCreateSerializer(serializers.ModelSerializer):
     class Meta:
