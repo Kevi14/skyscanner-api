@@ -42,7 +42,7 @@ class User(AbstractBaseUser):
         (1, CUSTOMER),
         (2, PROVIDER),
     )
-
+    
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES, default=CUSTOMER)
     first_name = models.CharField("first name", max_length=150)
     last_name = models.CharField("last name", max_length=150)

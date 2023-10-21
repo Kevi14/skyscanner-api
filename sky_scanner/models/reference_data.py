@@ -57,6 +57,8 @@ class BookingReference(models.Model):
 
 class IATACode(models.Model):
     code = models.CharField(max_length=3, unique=True)
+    airport_name = models.CharField(max_length=255)
+    city = models.CharField(max_length=255)  # City or location name
 
 class AirlineCode(models.Model):
     code = models.CharField(max_length=2, unique=True)

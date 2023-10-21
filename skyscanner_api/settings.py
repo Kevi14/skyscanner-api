@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     # 3rd party
     'rest_framework',
     "corsheaders",
+    "django_filters",
     # my apps
     "custom_auth",
     "sky_scanner.apps.SkyScannerConfig"
@@ -140,6 +141,9 @@ REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
     "EXCEPTION_HANDLER": "exceptions.custom_exception_handler",
     "DEFAULT_PAGINATION_CLASS": "paginator.CustomPaginator",
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )

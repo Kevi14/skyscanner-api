@@ -15,10 +15,12 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
 from config import API_MOUNT_PATH
+from sky_scanner.urls import router as sky_rotuer  # Replace 'your_app_name' with the name of the app containing your viewsets.
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path(f'{API_MOUNT_PATH}/auth/', include("custom_auth.urls")),
+    path(f'{API_MOUNT_PATH}/', include(sky_rotuer.urls)),  # Include the router URLs from your viewsets here.
 ]

@@ -17,9 +17,9 @@ class UserProfile(models.Model):
     
 
 class Traveller(models.Model):
-    first_mame = models.CharField(max_length=255)
+    first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
-    middle_mame = models.CharField(max_length=255, blank=True, null=True)
+    middle_name = models.CharField(max_length=255, blank=True, null=True)
     salutation = models.ForeignKey(Salutation, on_delete=models.CASCADE)
     gender = models.ForeignKey(Gender, on_delete=models.CASCADE)
     passenger_type = models.ForeignKey(PassengerType, on_delete=models.CASCADE)

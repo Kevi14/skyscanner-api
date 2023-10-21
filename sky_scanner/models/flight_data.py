@@ -2,6 +2,13 @@ from django.db import models
 from .reference_data import IATACode,FlightNumber,AirlineCode,BookingClass
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+class Flight(models.Model):
+    flight_number = models.CharField(max_length=6)
+    origin = models.ForeignKey(IATACode, related_name='departure_flights', on_delete=models.CASCADE)
+    destination = models.ForeignKey(IATACode, related_name='arrival_flights', on_delete=models.CASCADE)
+    departure_date = models.DateTimeField()
+    arrival_date = models.DateTimeField()
+
 class Address(models.Model):
     street = models.CharField(max_length=255)
     city = models.CharField(max_length=100)
