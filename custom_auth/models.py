@@ -31,6 +31,11 @@ class CustomUserManager(BaseUserManager):
             )
             return user
 
+import random
+import string
+
+def generate_referral_code():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
 
 
@@ -48,9 +53,7 @@ class User(AbstractBaseUser):
     last_name = models.CharField("last name", max_length=150)
     email = models.EmailField("email address", unique=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
-    # address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True)
     frequent_flyer_number = models.CharField(max_length=20, blank=True, null=True)
-    # document = models.ForeignKey(DocumentType, on_delete=models.SET_NULL, null=True)
     date_of_birth = models.DateField()
 
 

@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from datetime import datetime,timedelta
+from rest_framework.decorators import action
 
 # Create your views here.
 from rest_framework import viewsets,status
@@ -35,6 +37,12 @@ class TicketStatusViewSet(viewsets.ModelViewSet):
 class BookingClassViewSet(viewsets.ModelViewSet):
     queryset = BookingClass.objects.all()
     serializer_class = BookingClassSerializer
+    
+    @action(detail=False, methods=['GET'])
+    def user_bookings(self, request):
+        user_bookings = Booking.objects.filter(user=request.user).order_by('-created_at')  # Assuming you have a timestamp called `created_at` in your Booking model
+        serializer = BookingSerializer(user_bookings, many=True)
+        return Response(serializer.data)
 
 class TicketNumberViewSet(viewsets.ModelViewSet):
     queryset = TicketNumber.objects.all()
@@ -182,15 +190,15 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 def find_flight(departure_location, arrival_location, departure_date):
     # Assuming you have a Flight model
     flights = Flight.objects.filter(
-        departure_location=departure_location,
-        arrival_location=arrival_location,
-        departure_date=departure_date,
+        origin__city=departure_location,
+        destination__city=arrival_location,
+        departure_date=departure_date
     )
-
     # You can extend this with more conditions if needed
     # For example: Filter by available seats, flight status, etc.
     return flights.first() if flights else None
-    
+
+
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
@@ -198,25 +206,103 @@ class BookingViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data = request.data
 
+        data = request.data.copy()  # Making a mutable copy of the request data
         user = request.user
+        # Check if UserProfile exists, if not, create one
+        user_profile, created = UserProfile.objects.get_or_create(user=user)
+
+        # Extracting necessary details
+        traveller_data = {
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'frequent_flyer_number': user.frequent_flyer_number,
+            'document': user_profile.document.id if user_profile.document else None,
+            'linked_user_account': user.id,
+        }
+
+        # Get or create traveller
+        traveller, created = Traveller.objects.get_or_create(
+            linked_user_account=user.id, 
+            defaults=traveller_data,
+            email=user.email
+        )
+
+        if not created and any([getattr(traveller, key) != value for key, value in traveller_data.items()]):
+            # Update the traveller if any information has changed
+            for key, value in traveller_data.items():
+                setattr(traveller, key, value)
+            traveller.save()
+
         departure_location = data.pop('departure_location')
         arrival_location = data.pop('arrival_location')
-        departure_date = data.pop('departure_date')
+
+        departure_date_string = data.pop('departure_date')
+        departure_date = datetime.strptime(departure_date_string, "%Y-%m-%d").date()
 
         # Find a suitable flight
         flight = find_flight(departure_location, arrival_location, departure_date)
         
         if not flight:
             return Response({"error": "No available flight found for the given criteria."}, status=status.HTTP_400_BAD_REQUEST)
+                    # Generate a random ticket number
+        random_ticket_number = random.randint(100000, 999999)  # assuming 6 digit ticket numbers
+        random_airline_code = ''.join(random.choices(string.ascii_uppercase, k=3))
+
+        ticket_number = TicketNumber.objects.create(number=random_ticket_number)
+        ticketing_airline=AirlineCode.objects.create(code=random_airline_code)
+        print(ticket_number.id)
+        print(ticketing_airline.id)
+
+        ticket_data = {
+            'ticket_number': ticket_number,
+            'ticketing_airline': ticketing_airline,
+            'issued_date': datetime.now().date(),
+            'traveller': traveller,
+        }
+
+        ticket = Ticket.objects.create(**ticket_data)
         
         # Adding the found flight to your booking data
         data['flight'] = flight.id
         data['user'] = user.id
+        data['tickets'] = [ticket.id]
 
-        booking_serializer = BookingSerializer(data=data)
-        
+        from decimal import Decimal
+    
+                # Assuming you have the necessary information in your request.data
+        booking_class, created = BookingClass.objects.get_or_create(type="ECONOMY")
+        booked_segment_data = {
+            'origin': IATACode.objects.get(city=departure_location),
+            'destination': IATACode.objects.get(city=arrival_location),
+            # 'flight_number': FlightNumber.objects.get(number=data['flight_number']),
+            'flight_Date': departure_date,
+            'airline_code': ticketing_airline,  # Assuming the airline for the booked segment is the same as the ticketing airline
+            'departure_date': departure_date,
+            'price': Decimal(flight.price),
+            'booking_class':booking_class
+        }
+
+        booked_segment = BookedSegment.objects.create(**booked_segment_data)
+        ticket.booked_segments.add(booked_segment)
+        booking_serializer = BookingCreateSerializer(data=data)
+
+
         if booking_serializer.is_valid():
             booking_serializer.save()
             return Response(booking_serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(booking_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+from rest_framework.decorators import action
+from .rewards import RewardSystem
+
+class DiscountInfoViewSet(viewsets.ViewSet):
+    
+    @action(detail=False, methods=['GET'])
+    def discount_info(self, request):
+        user = request.user.id
+        reward_system = RewardSystem(user)
+        discount_info = reward_system.get_discount_info()
+
+        return Response(discount_info)

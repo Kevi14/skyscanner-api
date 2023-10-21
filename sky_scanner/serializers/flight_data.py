@@ -2,6 +2,12 @@ from rest_framework import serializers
 from ..models import Address, Contact, BookedSegment,Flight
 from .reference_data import IATACodeSerializer
 
+
+class BookedSegmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BookedSegment
+        fields = '__all__'
+
 class FlightSerializer(serializers.ModelSerializer):
     origin = IATACodeSerializer()  # Use the IATACode serializer for origin
     destination = IATACodeSerializer()  # Use the IATACode serializer for destination
@@ -40,8 +46,3 @@ class ContactSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
-
-class BookedSegmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BookedSegment
-        fields = '__all__'

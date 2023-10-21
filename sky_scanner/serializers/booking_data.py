@@ -1,9 +1,22 @@
 from rest_framework import serializers
-from ..models import UserProfile, Traveller, Document, Ticket, Booking,Address,DocumentType
+from ..models import UserProfile, Traveller, Document, Ticket, Booking,Address,DocumentType,ReferralCode,Referral,BookedSegment
 from django.contrib.auth import get_user_model
+from .flight_data import BookedSegmentSerializer
 User = get_user_model()
 
 
+class ReferralCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReferralCode
+        fields = ['user', 'code']
+
+class ReferralSerializer(serializers.ModelSerializer):
+    referrer_email = serializers.ReadOnlyField(source='referrer.email')
+    referred_email = serializers.ReadOnlyField(source='referred.email')
+
+    class Meta:
+        model = Referral
+        fields = ['referrer', 'referrer_email', 'referred', 'referred_email', 'date_referred']
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -44,17 +57,53 @@ class TravellerSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
+
 class TicketSerializer(serializers.ModelSerializer):
+    booked_segments = serializers.PrimaryKeyRelatedField(many=True, queryset=BookedSegment.objects.all())
+    
     class Meta:
         model = Ticket
         fields = '__all__'
+    
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Convert the booked_segments from ID to serialized data only for GET requests
+        data['booked_segments'] = BookedSegmentSerializer(instance.booked_segments.all(), many=True).data
+        return data
+    
 
 class BookingSerializer(serializers.ModelSerializer):
     tickets = TicketSerializer(many=True)
-
+    
     class Meta:
         model = Booking
         fields = '__all__'
+    
+    def create(self, validated_data):
+        ticket_ids = validated_data.pop('tickets')
+        booking = Booking.objects.create(**validated_data)
+        for ticket_id in ticket_ids:
+            ticket = Ticket.objects.get(id=ticket_id)
+            ticket.booking = booking  # assuming `booking` is a ForeignKey in the `Ticket` model pointing to `Booking`
+            ticket.save()
+        return booking
+    
+
+class BookingCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Booking
+        fields = '__all__'
+    
+    def create(self, validated_data):
+        tickets_data = validated_data.pop('tickets')
+        booking = Booking.objects.create(**validated_data)
+
+        for ticket in tickets_data:
+            booking.tickets.add(ticket)
+        
+        return booking
+
 
 class UserEditSerializer(serializers.ModelSerializer):
     class Meta:
