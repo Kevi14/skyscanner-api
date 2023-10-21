@@ -5,7 +5,7 @@ from .views import (FlightViewSet, DocumentTypeViewSet, PassengerTypeViewSet, Ge
                     SalutationViewSet, TicketStatusViewSet, BookingClassViewSet, 
                     TicketNumberViewSet, BookingReferenceViewSet, IATACodeViewSet, 
                     AirlineCodeViewSet, FlightNumberViewSet, AddressViewSet, 
-                    ContactViewSet, BookedSegmentViewSet,BookingViewSet,DiscountInfoViewSet,UserProfileViewSet)
+                    ContactViewSet, PromoCodeViewset, RewardInfoViewSet,ReferralCodeViewSet, BookedSegmentViewSet,BookingViewSet,DiscountInfoViewSet,UserProfileViewSet)
 
 from sky_scanner.views import CityListViewSet
 
@@ -29,6 +29,11 @@ router.register(r'cities', CityListViewSet, basename='city')
 router.register(r'bookings', BookingViewSet)
 router.register(r'discount_info', DiscountInfoViewSet, basename='discount-info')
 router.register(r'profile', UserProfileViewSet)
+router.register(r'referral-code', ReferralCodeViewSet, basename='referral-code')
+router.register(r'reward-info', RewardInfoViewSet, basename='reward-info')
+router.register(r'promo-code', PromoCodeViewset, basename='promo-code')
+
+
 urlpatterns = [
     path('', include(router.urls)),
 ]

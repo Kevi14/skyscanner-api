@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from datetime import datetime,timedelta
 from rest_framework.decorators import action
-
+from custom_auth.models import Referral,ReferralCode
 # Create your views here.
 from rest_framework import viewsets,status
 from .models import *
@@ -12,6 +12,7 @@ from .serializers import *
 from .models import Address, Contact, BookedSegment
 from .serializers import AddressSerializer, ContactSerializer, BookedSegmentSerializer
 import django_filters
+from .referals import ReferralRewardSystem
 
 # Reference Data
 class DocumentTypeViewSet(viewsets.ModelViewSet):
@@ -64,12 +65,17 @@ class FlightNumberViewSet(viewsets.ModelViewSet):
     queryset = FlightNumber.objects.all()
     serializer_class = FlightNumberSerializer
 
-# Flight data
-
 
 class AddressViewSet(viewsets.ModelViewSet):
     queryset = Address.objects.all()
     serializer_class = AddressSerializer
+
+
+class PromoCodeViewset(viewsets.ModelViewSet):
+    serializer_class = PromoCodeSerializer
+
+    def get_queryset(self):
+        return PromoCode.objects.filter(user=self.request.user)
 
 class ContactViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.all()
@@ -268,17 +274,29 @@ class BookingViewSet(viewsets.ModelViewSet):
         data['tickets'] = [ticket.id]
 
         from decimal import Decimal
-    
-                # Assuming you have the necessary information in your request.data
+       # Before calculating the price, check for promo code
+        promo_code_value = data.get('promo_code')  # assuming "promo_code" is the key in request.data
+        discount_percentage = 0
+        if promo_code_value:
+            try:
+                promo_code = PromoCode.objects.get(code=promo_code_value, user=request.user)
+                discount_percentage = promo_code.points_consumed/10  
+            except PromoCode.DoesNotExist:
+                return Response({"error": "Invalid promo code."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Assuming you have the necessary information in your request.data
+        booking_class, created = BookingClass.objects.get_or_create(type="ECONOMY")
+        original_price = Decimal(flight.price)
+        discounted_price = original_price * (1 - discount_percentage/100)  # Calculate the discounted price
+
         booking_class, created = BookingClass.objects.get_or_create(type="ECONOMY")
         booked_segment_data = {
             'origin': IATACode.objects.get(city=departure_location),
             'destination': IATACode.objects.get(city=arrival_location),
-            # 'flight_number': FlightNumber.objects.get(number=data['flight_number']),
             'flight_Date': departure_date,
-            'airline_code': ticketing_airline,  # Assuming the airline for the booked segment is the same as the ticketing airline
+            'airline_code': ticketing_airline,  
             'departure_date': departure_date,
-            'price': Decimal(flight.price),
+            'price': discounted_price,
             'booking_class':booking_class
         }
 
@@ -306,3 +324,35 @@ class DiscountInfoViewSet(viewsets.ViewSet):
         discount_info = reward_system.get_discount_info()
 
         return Response(discount_info)
+    
+class ReferralCodeViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ReferralCode.objects.all()
+    serializer_class = ReferralCodeSerializer
+
+    def get_queryset(self):
+        # Only return the referral code for the authenticated user
+        referral_code, created = ReferralCode.objects.get_or_create(user=self.request.user)
+        return ReferralCode.objects.filter(id=referral_code.id)
+    
+
+class RewardInfoViewSet(viewsets.ViewSet):
+
+    @action(detail=False, methods=['GET'])
+    def get_reward(self, request):
+        reward_system = ReferralRewardSystem(request.user)
+        data = reward_system.get_reward_info()
+
+        # Add max_points to data
+        data["max_points"] = reward_system.POINTS_FOR_MAX_DISCOUNT
+
+        serializer = RewardInfoSerializer(data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+      
+    @action(detail=False, methods=['GET'])
+    def generate_promo(self, request):
+        reward_system = ReferralRewardSystem(request.user)
+        
+        # Generate promo code
+        promo_data = reward_system.generate_promo_code()
+        
+        return Response(promo_data, status=status.HTTP_200_OK)

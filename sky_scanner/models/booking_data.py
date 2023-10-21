@@ -10,28 +10,12 @@ User = get_user_model()
 import random
 import string
 
-def generate_referral_code():
-    """Generate a random 8-character referral code."""
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-
-class ReferralCode(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="referral_code")
-    code = models.CharField(max_length=8, unique=True, default=generate_referral_code)
-    
-    def __str__(self):
-        return self.code
-
-class Referral(models.Model):
-    referrer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="referrals_made")
-    referred = models.ForeignKey(User, on_delete=models.CASCADE, related_name="referred_by")
-    date_referred = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ['referrer', 'referred']  # Ensure that a user can't refer the same person multiple times
-
-    def __str__(self):
-        return f"{self.referrer.email} -> {self.referred.email}"
-
+class PromoCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="promocodes")
+    code = models.CharField(max_length=15, unique=True)
+    validity = models.DateField()
+    is_used = models.BooleanField(default=False)
+    points_consumed = models.IntegerField()
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")

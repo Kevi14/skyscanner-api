@@ -1,9 +1,19 @@
 from rest_framework import serializers
-from ..models import UserProfile, Traveller, Document, Ticket, Booking,Address,DocumentType,ReferralCode,Referral,BookedSegment
+from ..models import UserProfile, Traveller, PromoCode, Document, Ticket, Booking,Address,DocumentType,BookedSegment
 from django.contrib.auth import get_user_model
 from .flight_data import BookedSegmentSerializer,ShowBookedSegmentSerializer
+from custom_auth.models import Referral,ReferralCode
 User = get_user_model()
 
+class PromoCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PromoCode
+        fields = ('user', 'code', 'validity', 'points_consumed')
+
+class RewardInfoSerializer(serializers.Serializer):
+    total_points = serializers.IntegerField()
+    discount_percentage = serializers.FloatField()
+    max_points = serializers.IntegerField(default=500)  # This is from your POINTS_FOR_MAX_DISCOUNT constant
 
 class ReferralCodeSerializer(serializers.ModelSerializer):
     class Meta:
