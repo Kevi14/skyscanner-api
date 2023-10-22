@@ -36,7 +36,7 @@ class Discount:
             }
         },
         'Diamond': {
-            'range': (30, float('inf')),
+            'range': (30, 10000),
             'discounts': {
                 'Economic': 25,
                 'Business': 22,

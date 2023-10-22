@@ -314,6 +314,19 @@ class BookingViewSet(viewsets.ModelViewSet):
 
 from rest_framework.decorators import action
 from .rewards import RewardSystem
+import json
+
+def clean_data_for_json(data):
+    if isinstance(data, dict):
+        for key, value in data.items():
+            data[key] = clean_data_for_json(value)
+    elif isinstance(data, list):
+        data = [clean_data_for_json(item) for item in data]
+    elif isinstance(data, tuple):
+        return list(data)
+    elif data == float('inf'):
+        return 'inf'  # or you could use a large number like 9999999999
+    return data
 
 class DiscountInfoViewSet(viewsets.ViewSet):
     
@@ -322,8 +335,13 @@ class DiscountInfoViewSet(viewsets.ViewSet):
         user = request.user.id
         reward_system = RewardSystem(user)
         discount_info = reward_system.get_discount_info()
+        for key, value in discount_info.items():
+            if isinstance(value, Decimal):
+                discount_info[key] = float(value)
+        cleaned_data = clean_data_for_json(discount_info)
+        print(cleaned_data)
+        return Response(json.dumps(cleaned_data), content_type='application/json')
 
-        return Response(discount_info)
     
 class ReferralCodeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ReferralCode.objects.all()
