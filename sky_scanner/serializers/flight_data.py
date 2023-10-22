@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from ..models import Address, Contact, BookedSegment,Flight
 from .reference_data import IATACodeSerializer,BookingClassSerializer
+from ..rewards import RewardSystem
 
 class ShowBookedSegmentSerializer(serializers.ModelSerializer):
     origin = IATACodeSerializer()
@@ -15,15 +16,26 @@ class BookedSegmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = BookedSegment
         fields = '__all__'
+        
+from decimal import Decimal
 
 class FlightSerializer(serializers.ModelSerializer):
     origin = IATACodeSerializer()  # Use the IATACode serializer for origin
     destination = IATACodeSerializer()  # Use the IATACode serializer for destination
+    discounted_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Flight
-        fields = '__all__'
+        fields = ['flight_number', 'origin', 'destination', 'departure_date', 'price', 'discounted_price']
+    
 
+    def get_discounted_price(self, obj):
+        user = self.context['request'].user
+        reward_system = RewardSystem(user)
+        reward_data = reward_system.get_discount_info()
+        discount_percentage = Decimal(reward_data['max_discount_percentage']) / 100
+        return float(obj.price * (1 - discount_percentage))
+    
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address

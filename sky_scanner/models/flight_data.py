@@ -9,6 +9,12 @@ class Flight(models.Model):
     departure_date = models.DateField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
+    @property
+    def discounted_price(self):
+        discount_percentage = 10
+        return self.price * (1 - discount_percentage/100)
+    
+
 class Address(models.Model):
     street = models.CharField(max_length=255)
     city = models.CharField(max_length=100)
