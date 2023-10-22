@@ -73,5 +73,5 @@ class ReferralRewardSystem:
         # Return promo code details
         return {
             "promo_code": code,
-            "validity_date": validity_date
+             "validity_date": validity_date.strftime('%Y-%m-%d')
         }
