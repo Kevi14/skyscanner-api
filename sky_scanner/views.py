@@ -12,6 +12,7 @@ from .serializers import *
 from .models import Address, Contact, BookedSegment
 from .serializers import AddressSerializer, ContactSerializer, BookedSegmentSerializer
 import django_filters
+from rest_framework.permissions import IsAuthenticated
 from .referals import ReferralRewardSystem
 
 # Reference Data
@@ -38,7 +39,7 @@ class TicketStatusViewSet(viewsets.ModelViewSet):
 class BookingClassViewSet(viewsets.ModelViewSet):
     queryset = BookingClass.objects.all()
     serializer_class = BookingClassSerializer
-    
+    permission_classes =[IsAuthenticated]
     @action(detail=False, methods=['GET'])
     def user_bookings(self, request):
         user_bookings = Booking.objects.filter(user=request.user) # Assuming you have a timestamp called `created_at` in your Booking model
