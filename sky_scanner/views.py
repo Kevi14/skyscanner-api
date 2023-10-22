@@ -42,7 +42,7 @@ class BookingClassViewSet(viewsets.ModelViewSet):
     permission_classes =[IsAuthenticated]
     @action(detail=False, methods=['GET'])
     def user_bookings(self, request):
-        user_bookings = Booking.objects.filter(user=request.user) # Assuming you have a timestamp called `created_at` in your Booking model
+        user_bookings = Booking.objects.filter(user=request.user)
         serializer = BookingSerializer(user_bookings, many=True)
         return Response(serializer.data)
 
@@ -74,7 +74,7 @@ class AddressViewSet(viewsets.ModelViewSet):
 import django_filters
 
 class PromoCodeFilter(django_filters.FilterSet):
-    code = django_filters.CharFilter(lookup_expr='contains')  # This allows filtering by code using case-insensitive partial matches
+    code = django_filters.CharFilter(lookup_expr='exact')  # This allows filtering by code using case-insensitive partial matches
 
     class Meta:
         model = PromoCode
