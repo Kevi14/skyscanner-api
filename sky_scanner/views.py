@@ -296,7 +296,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         # Assuming you have the necessary information in your request.data
         booking_class, created = BookingClass.objects.get_or_create(type="ECONOMY")
         original_price = Decimal(flight.price)
-        discounted_price = original_price * (1 - discount_percentage/100)  # Calculate the discounted price
+        discounted_price = float(original_price) * (1 - discount_percentage/100)  # Calculate the discounted price
 
         booking_class, created = BookingClass.objects.get_or_create(type="ECONOMY")
         booked_segment_data = {
