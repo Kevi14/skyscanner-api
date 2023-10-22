@@ -70,13 +70,22 @@ class AddressViewSet(viewsets.ModelViewSet):
     queryset = Address.objects.all()
     serializer_class = AddressSerializer
 
+import django_filters
+
+class PromoCodeFilter(django_filters.FilterSet):
+    code = django_filters.CharFilter(lookup_expr='contains')  # This allows filtering by code using case-insensitive partial matches
+
+    class Meta:
+        model = PromoCode
+        fields = ['code']
 
 class PromoCodeViewset(viewsets.ModelViewSet):
     serializer_class = PromoCodeSerializer
+    filterset_class = PromoCodeFilter
 
     def get_queryset(self):
         return PromoCode.objects.filter(user=self.request.user)
-
+    
 class ContactViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
